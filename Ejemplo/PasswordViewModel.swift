@@ -8,8 +8,103 @@ class PasswordViewModel: ObservableObject {
     private var db = Firestore.firestore()
     private var listener: ListenerRegistration?
     
+    // ✅ Servicio de encriptación
+    private let encryptionService = EncryptionService()
+    
+    init() {
+        // Configurar encriptación al inicializar
+        setupEncryption()
+        
+        // ✅ LIMPIAR CONTRASEÑAS VIEJAS (ejecutar solo una vez)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.deleteUnencryptedPasswords()
+        }
+    }
+    
     deinit {
         listener?.remove()
+    }
+    
+    // ✅ Configurar encriptación
+    private func setupEncryption() {
+        // ⚠️ TEMPORAL: Usar una clave fija por ahora
+        let temporaryMasterPassword = "clave-maestra-temporal-123"
+        encryptionService.setupEncryptionKey(masterPassword: temporaryMasterPassword)
+        print("🔐 DEBUG - Encriptación configurada")
+    }
+    
+    // ✅ NUEVA FUNCIÓN: Borrar contraseñas antiguas sin encriptar
+    func deleteUnencryptedPasswords() {
+        guard let user = Auth.auth().currentUser else {
+            print("❌ DEBUG - No hay usuario para limpiar contraseñas")
+            return
+        }
+        
+        let userUID = user.uid
+        
+        print("🔍 DEBUG - 🗑️ INICIANDO LIMPIEZA DE CONTRASEÑAS SIN ENCRIPTAR...")
+        print("🔍 DEBUG - 🔍 Buscando contraseñas del usuario: \(userUID)")
+        
+        db.collection("passwords").getDocuments { [weak self] snapshot, error in
+            if let error = error {
+                print("❌ DEBUG - Error al obtener documentos: \(error)")
+                return
+            }
+            
+            guard let documents = snapshot?.documents else {
+                print("🔍 DEBUG - No se encontraron documentos")
+                return
+            }
+            
+            print("🔍 DEBUG - 📊 Total de documentos en BD: \(documents.count)")
+            
+            var deletedCount = 0
+            let group = DispatchGroup()
+            
+            for document in documents {
+                let data = document.data()
+                let docUserId = data["userId"] as? String
+                let docService = data["service"] as? String ?? "Sin nombre"
+                
+                // Solo procesar documentos del usuario actual
+                if docUserId == userUID {
+                    let encryptedPassword = data["password"] as? String ?? ""
+                    
+                    // Intentar desencriptar - si falla, es porque no está encriptada
+                    if self?.encryptionService.decrypt(encryptedPassword) == nil {
+                        print("🔍 DEBUG - 🗑️ ELIMINANDO contraseña sin encriptar: \(docService)")
+                        
+                        group.enter()
+                        document.reference.delete { error in
+                            if let error = error {
+                                print("❌ DEBUG - Error eliminando \(docService): \(error)")
+                            } else {
+                                deletedCount += 1
+                                print("✅ DEBUG - Eliminada: \(docService)")
+                            }
+                            group.leave()
+                        }
+                    } else {
+                        print("🔍 DEBUG - ✅ Contraseña ENCRIPTADA (se mantiene): \(docService)")
+                    }
+                }
+            }
+            
+            group.notify(queue: .main) {
+                print("🔍 DEBUG - 🎯 LIMPIEZA COMPLETADA")
+                print("🔍 DEBUG - 📊 Contraseñas eliminadas: \(deletedCount)")
+                
+                if deletedCount > 0 {
+                    print("🔍 DEBUG - 🔄 Recargando lista después de limpieza...")
+                    // Esperar un poco y recargar
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self?.fetchPasswords()
+                    }
+                } else {
+                    print("🔍 DEBUG - ✅ No había contraseñas sin encriptar")
+                }
+            }
+        }
     }
     
     func fetchPasswords() {
@@ -25,44 +120,18 @@ class PasswordViewModel: ObservableObject {
         print("🔍 DEBUG - Email del usuario: \(userEmail)")
         print("🔍 DEBUG - UID del usuario: \(userUID)")
         
-        // DEBUG TEMPORAL: Mostrar TODOS los documentos sin filtrar
-        db.collection("passwords").getDocuments { snapshot, error in
-            if let error = error {
-                print("❌ DEBUG - Error al obtener todos los documentos: \(error)")
-                return
-            }
-            
-            if let documents = snapshot?.documents {
-                print("🔍 DEBUG - TOTAL documentos en BD: \(documents.count)")
-                if documents.count == 0 {
-                    print("🔍 DEBUG - ⚠️ LA BASE DE DATOS ESTÁ VACÍA")
-                } else {
-                    print("🔍 DEBUG - 📊 CONTENIDO DE LA BASE DE DATOS:")
-                    for doc in documents {
-                        let data = doc.data()
-                        let docEmail = data["userEmail"] as? String ?? "NO_EMAIL"
-                        let docService = data["service"] as? String ?? "NO_SERVICE"
-                        let docUserID = data["userId"] as? String ?? "NO_UID"
-                        print("🔍 DEBUG - 📄 \(docService) | Email: \(docEmail) | UID: \(docUserID.prefix(8))...")
-                    }
-                }
-            }
-        }
-        
         // Remover listener anterior si existe
         listener?.remove()
         
         print("🔍 DEBUG - 🔍 Buscando documentos con filtro: userId = \(userUID)")
         
-        // CONSULTA CORREGIDA: Usar userId en lugar de userEmail
         listener = db.collection("passwords")
-            .whereField("userId", isEqualTo: userUID) // ← CAMBIO CLAVE AQUÍ
+            .whereField("userId", isEqualTo: userUID)
             .order(by: "createdAt", descending: true)
             .addSnapshotListener { [weak self] querySnapshot, error in
                 if let error = error {
                     print("❌ DEBUG - Error en fetch filtrado: \(error.localizedDescription)")
                     
-                    // Si hay error de índice, intentar consulta alternativa
                     if error.localizedDescription.contains("index") {
                         print("🔍 DEBUG - ⚠️ Índice en construcción, usando consulta alternativa...")
                         self?.fetchPasswordsAlternative()
@@ -80,38 +149,36 @@ class PasswordViewModel: ObservableObject {
                 
                 if documents.count == 0 {
                     print("🔍 DEBUG - ⚠️ NO HAY DOCUMENTOS CON EL USER_ID: \(userUID)")
-                    print("🔍 DEBUG - 💡 Posibles soluciones:")
-                    print("🔍 DEBUG -   1. Crear nueva contraseña desde la app")
-                    print("🔍 DEBUG -   2. Verificar que userId coincida en los documentos")
                 }
                 
                 self?.passwords = documents.compactMap { document in
                     let data = document.data()
+                    
+                    // ✅ Desencriptar la contraseña
+                    let encryptedPassword = data["password"] as? String ?? ""
+                    let decryptedPassword = self?.encryptionService.decrypt(encryptedPassword) ?? "❌ Error desencriptando"
+                    
                     let passwordItem = PasswordItem(
                         id: document.documentID,
                         service: data["service"] as? String ?? "",
                         username: data["username"] as? String ?? "",
-                        password: data["password"] as? String ?? "",
+                        password: decryptedPassword,
                         notes: data["notes"] as? String ?? "",
                         userEmail: data["userEmail"] as? String ?? "",
                         userId: data["userId"] as? String ?? "",
                         createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
                     )
-                    print("🔍 DEBUG - 🎯 Password cargado: \(passwordItem.service)")
+                    
+                    if decryptedPassword == "❌ Error desencriptando" {
+                        print("🔍 DEBUG - ⚠️ Problema con: \(passwordItem.service)")
+                    } else {
+                        print("🔍 DEBUG - 🎯 Password cargado: \(passwordItem.service) - \(decryptedPassword.prefix(3))...")
+                    }
+                    
                     return passwordItem
                 }
                 
                 print("🔍 DEBUG - 📱 passwords array actualizado con \(self?.passwords.count ?? 0) elementos")
-                
-                // Debug final del array
-                if let passwords = self?.passwords, !passwords.isEmpty {
-                    print("🔍 DEBUG - 🎉 CONTRASEÑAS CARGADAS EN LA APP:")
-                    for (index, password) in passwords.enumerated() {
-                        print("🔍 DEBUG -   \(index + 1). \(password.service) - \(password.username)")
-                    }
-                } else {
-                    print("🔍 DEBUG - 😞 ARRAY DE CONTRASEÑAS VACÍO")
-                }
             }
     }
     
@@ -124,7 +191,6 @@ class PasswordViewModel: ObservableObject {
         
         db.collection("passwords").getDocuments { [weak self] snapshot, error in
             if let documents = snapshot?.documents {
-                // Filtrar manualmente en el cliente
                 let filteredDocs = documents.filter { doc in
                     let docUserId = doc.data()["userId"] as? String
                     return docUserId == userUID
@@ -134,11 +200,15 @@ class PasswordViewModel: ObservableObject {
                 
                 self?.passwords = filteredDocs.compactMap { document in
                     let data = document.data()
+                    
+                    let encryptedPassword = data["password"] as? String ?? ""
+                    let decryptedPassword = self?.encryptionService.decrypt(encryptedPassword) ?? "❌ Error desencriptando"
+                    
                     return PasswordItem(
                         id: document.documentID,
                         service: data["service"] as? String ?? "",
                         username: data["username"] as? String ?? "",
-                        password: data["password"] as? String ?? "",
+                        password: decryptedPassword,
                         notes: data["notes"] as? String ?? "",
                         userEmail: data["userEmail"] as? String ?? "",
                         userId: data["userId"] as? String ?? "",
@@ -160,20 +230,27 @@ class PasswordViewModel: ObservableObject {
         
         print("🔍 DEBUG - 💾 Guardando contraseña para userId: \(userUID)")
         
+        // ✅ Encriptar la contraseña antes de guardar
+        guard let encryptedPassword = encryptionService.encrypt(password) else {
+            print("❌ DEBUG - Error: No se pudo encriptar la contraseña")
+            return
+        }
+        
         let passwordData: [String: Any] = [
             "service": service,
             "username": username,
-            "password": password,
+            "password": encryptedPassword,
             "notes": notes,
             "userEmail": userEmail,
-            "userId": userUID, // ← SIEMPRE usar el UID correcto
+            "userId": userUID,
             "createdAt": Timestamp(date: Date())
         ]
         
         print("🔍 DEBUG - 📊 Datos a guardar:")
         print("🔍 DEBUG -   Service: \(service)")
         print("🔍 DEBUG -   Username: \(username)")
-        print("🔍 DEBUG -   Password: \(password)")
+        print("🔍 DEBUG -   Password (original): \(password)")
+        print("🔍 DEBUG -   Password (encriptado): \(encryptedPassword.prefix(20))...")
         print("🔍 DEBUG -   Notes: \(notes)")
         print("🔍 DEBUG -   userEmail: \(userEmail)")
         print("🔍 DEBUG -   userId: \(userUID)")
@@ -182,10 +259,9 @@ class PasswordViewModel: ObservableObject {
             if let error = error {
                 print("❌ Error guardando contraseña: \(error)")
             } else {
-                print("✅ Contraseña guardada exitosamente para: \(service)")
+                print("✅ Contraseña guardada y ENCRIPTADA exitosamente para: \(service)")
                 print("✅ userId asociado: \(userUID)")
                 
-                // FORZAR ACTUALIZACIÓN INMEDIATA
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     print("🔍 DEBUG - 🔄 Ejecutando refresh después de guardar...")
                     self?.fetchPasswords()
@@ -205,7 +281,6 @@ class PasswordViewModel: ObservableObject {
             } else {
                 print("✅ Contraseña eliminada: \(password.service)")
                 
-                // FORZAR ACTUALIZACIÓN INMEDIATA
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self?.fetchPasswords()
                 }
@@ -213,13 +288,39 @@ class PasswordViewModel: ObservableObject {
         }
     }
     
-    // FUNCIÓN: Forzar refresh manual
     func refreshPasswords() {
         print("🔍 DEBUG - 🔄 Refresh manual solicitado")
         fetchPasswords()
     }
     
-    // FUNCIÓN: Borrar TODAS las contraseñas (solo para desarrollo)
+    func updatePassword(_ passwordItem: PasswordItem) {
+        guard let id = passwordItem.id else { return }
+        
+        guard let encryptedPassword = encryptionService.encrypt(passwordItem.password) else {
+            print("❌ DEBUG - Error: No se pudo encriptar la contraseña para actualizar")
+            return
+        }
+        
+        let updateData: [String: Any] = [
+            "service": passwordItem.service,
+            "username": passwordItem.username,
+            "password": encryptedPassword,
+            "notes": passwordItem.notes,
+            "userEmail": passwordItem.userEmail,
+            "userId": passwordItem.userId,
+            "createdAt": Timestamp(date: passwordItem.createdAt)
+        ]
+        
+        db.collection("passwords").document(id).updateData(updateData) { error in
+            if let error = error {
+                print("❌ Error actualizando contraseña: \(error)")
+            } else {
+                print("✅ Contraseña actualizada y ENCRIPTADA: \(passwordItem.service)")
+            }
+        }
+    }
+    
+    // ✅ FUNCIÓN: Borrar TODAS las contraseñas (solo para desarrollo)
     func deleteAllPasswords() {
         print("🔍 DEBUG - 🗑️ ELIMINANDO TODAS LAS CONTRASEÑAS")
         
@@ -233,7 +334,6 @@ class PasswordViewModel: ObservableObject {
                 
                 print("🔍 DEBUG - ✅ Todos los documentos eliminados")
                 
-                // Recargar después de eliminar
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     self?.fetchPasswords()
                 }

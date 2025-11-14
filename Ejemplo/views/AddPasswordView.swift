@@ -6,6 +6,14 @@
 //  Copyright © 2025 Dilson Abrego. All rights reserved.
 //
 
+//
+//  AddPasswordView.swift
+//  Ejemplo
+//
+//  Created by Dilson Abrego on 9/15/25.
+//  Copyright © 2025 Dilson Abrego. All rights reserved.
+//
+
 import SwiftUI
 
 struct AddPasswordView: View {
@@ -17,6 +25,7 @@ struct AddPasswordView: View {
     @State private var password = ""
     @State private var notes = ""
     @State private var isSaving = false
+    @State private var showingGeneratedAlert = false
     
     // Colores azules
     let mainBlue = Color(red: 0.1, green: 0.3, blue: 0.7)
@@ -133,6 +142,40 @@ struct AddPasswordView: View {
                                         RoundedRectangle(cornerRadius: 10)
                                             .stroke(password.isEmpty ? Color.gray.opacity(0.3) : mainBlue, lineWidth: 1)
                                     )
+                                
+                                // ✅ BOTÓN GENERAR CONTRASEÑA
+                                HStack {
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        // Generar contraseña automáticamente
+                                        password = PasswordGenerator.generateSecurePassword()
+                                        showingGeneratedAlert = true
+                                    }) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "key.fill")
+                                                .font(.system(size: 12))
+                                            Text("Generar Contraseña Segura")
+                                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                        }
+                                        .foregroundColor(mainBlue)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(mainBlue.opacity(0.1))
+                                        .cornerRadius(15)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 15)
+                                                .stroke(mainBlue, lineWidth: 1)
+                                        )
+                                    }
+                                }
+                                .padding(.top, 4)
+                                
+                                // ✅ MEDIDOR DE FORTALEZA (aparece cuando hay contraseña)
+                                if !password.isEmpty {
+                                    PasswordStrengthMeter(password: password)
+                                        .padding(.top, 4)
+                                }
                             }
                             .padding(.horizontal)
                             
@@ -230,6 +273,14 @@ struct AddPasswordView: View {
                 .foregroundColor(isSaving ? .gray : .red)
                 .font(.system(size: 16, weight: .medium))
             )
+            // ✅ ALERTA DE CONTRASEÑA GENERADA
+            .alert(isPresented: $showingGeneratedAlert) {
+                Alert(
+                    title: Text("Contraseña Generada"),
+                    message: Text("Se ha creado una contraseña segura. Puedes usarla o editarla."),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

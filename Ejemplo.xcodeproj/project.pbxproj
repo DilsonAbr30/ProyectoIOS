@@ -7,8 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		49724C6A2EC694310083F5B8 /* PasswordStrengthMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49724C692EC694310083F5B8 /* PasswordStrengthMeter.swift */; };
 		4996EAED2EA445F400D5B595 /* PasswordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4996EAEC2EA445F400D5B595 /* PasswordViewModel.swift */; };
 		4996EAF02EA447F400D5B595 /* PasswordItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4996EAEF2EA447F400D5B595 /* PasswordItem.swift */; };
+		49F258EA2EC6AB04001287BF /* PasswordGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F258E92EC6AB04001287BF /* PasswordGenerator.swift */; };
+		49F258ED2EC6AF18001287BF /* EncryptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F258EC2EC6AF18001287BF /* EncryptionService.swift */; };
 		5B09ECD12E78EAD300888ED2 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B09ECD02E78EAD300888ED2 /* LoginView.swift */; };
 		5B09ECD32E78EB2900888ED2 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B09ECD22E78EB2900888ED2 /* RegisterView.swift */; };
 		5B09ECE62E78FEBE00888ED2 /* AddPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B09ECE52E78FEBE00888ED2 /* AddPasswordView.swift */; };
@@ -33,8 +36,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		49724C692EC694310083F5B8 /* PasswordStrengthMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordStrengthMeter.swift; sourceTree = "<group>"; };
 		4996EAEC2EA445F400D5B595 /* PasswordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordViewModel.swift; sourceTree = "<group>"; };
 		4996EAEF2EA447F400D5B595 /* PasswordItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordItem.swift; sourceTree = "<group>"; };
+		49F258E92EC6AB04001287BF /* PasswordGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordGenerator.swift; sourceTree = "<group>"; };
+		49F258EC2EC6AF18001287BF /* EncryptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionService.swift; sourceTree = "<group>"; };
 		5B09ECD02E78EAD300888ED2 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		5B09ECD22E78EB2900888ED2 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
 		5B09ECE52E78FEBE00888ED2 /* AddPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPasswordView.swift; sourceTree = "<group>"; };
@@ -71,6 +77,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		49724C682EC693F40083F5B8 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				49724C692EC694310083F5B8 /* PasswordStrengthMeter.swift */,
+				49F258E92EC6AB04001287BF /* PasswordGenerator.swift */,
+				49F258EC2EC6AF18001287BF /* EncryptionService.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		5B09ECCF2E78EA9B00888ED2 /* views */ = {
 			isa = PBXGroup;
 			children = (
@@ -107,6 +123,7 @@
 		5B9201632E78B91000220B4F /* Ejemplo */ = {
 			isa = PBXGroup;
 			children = (
+				49724C682EC693F40083F5B8 /* Components */,
 				5BD2AA782EA2FBA400B00AA0 /* models */,
 				5B09ECCF2E78EA9B00888ED2 /* views */,
 				5B9201642E78B91000220B4F /* AppDelegate.swift */,
@@ -220,10 +237,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				5B09ECE62E78FEBE00888ED2 /* AddPasswordView.swift in Sources */,
+				49F258EA2EC6AB04001287BF /* PasswordGenerator.swift in Sources */,
+				49F258ED2EC6AF18001287BF /* EncryptionService.swift in Sources */,
 				4996EAED2EA445F400D5B595 /* PasswordViewModel.swift in Sources */,
 				5B09ECF22E790B9000888ED2 /* SecurityPolicyView.swift in Sources */,
 				5B9201652E78B91000220B4F /* AppDelegate.swift in Sources */,
 				5B09ECD32E78EB2900888ED2 /* RegisterView.swift in Sources */,
+				49724C6A2EC694310083F5B8 /* PasswordStrengthMeter.swift in Sources */,
 				5B9201672E78B91000220B4F /* SceneDelegate.swift in Sources */,
 				5B09ECEE2E7900BE00888ED2 /* MainListView.swift in Sources */,
 				5B09ECE82E78FED700888ED2 /* PasswordDetailView.swift in Sources */,
