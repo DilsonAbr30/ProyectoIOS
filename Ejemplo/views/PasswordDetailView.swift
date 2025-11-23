@@ -1,19 +1,13 @@
-//
-//  PasswordDetailView.swift
-//  Ejemplo
-//
-//  Created by Dilson Abrego on 9/15/25.
-//  Copyright © 2025 Dilson Abrego. All rights reserved.
-//
-
 import SwiftUI
 import LocalAuthentication
 
 struct PasswordDetailView: View {
     let password: PasswordItem
+    @ObservedObject var passwordViewModel: PasswordViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var showPassword = false
     @State private var showEdit = false
+    @State private var showDeleteConfirmation = false
     @State private var showCopiedAlert = false
     @State private var copiedText = ""
     
@@ -21,6 +15,11 @@ struct PasswordDetailView: View {
     let mainBlue = Color(red: 0.1, green: 0.3, blue: 0.7)
     let lightBlue = Color(red: 0.9, green: 0.95, blue: 1.0)
     let darkBlue = Color(red: 0.05, green: 0.2, blue: 0.6)
+    
+    init(password: PasswordItem, passwordViewModel: PasswordViewModel) {
+        self.password = password
+        self.passwordViewModel = passwordViewModel
+    }
     
     var body: some View {
         ZStack {
@@ -74,22 +73,53 @@ struct PasswordDetailView: View {
                     
                     // Acciones
                     VStack(spacing: 12) {
+                        // Botón Editar
                         Button(action: {
-                            copyToClipboard(password.username)
-                            copiedText = "usuario"
+                            showEdit = true
                         }) {
-                            actionButton(icon: "person.crop.circle", title: "Copiar Usuario", color: mainBlue)
+                            actionButton(icon: "pencil", title: "Editar Contraseña", color: mainBlue)
                         }
                         
-                        Button(action: {
-                            copyToClipboard(password.password)
-                            copiedText = "contraseña"
-                        }) {
-                            actionButton(icon: "doc.on.doc", title: "Copiar Contraseña", color: mainBlue)
+                        // Botones de Copiar
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                copyToClipboard(password.username)
+                                copiedText = "usuario"
+                            }) {
+                                HStack {
+                                    Image(systemName: "person.crop.circle")
+                                        .font(.system(size: 16))
+                                    Text("Copiar Usuario")
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(mainBlue)
+                                .cornerRadius(10)
+                            }
+                            
+                            Button(action: {
+                                copyToClipboard(password.password)
+                                copiedText = "contraseña"
+                            }) {
+                                HStack {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 16))
+                                    Text("Copiar Contraseña")
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(darkBlue)
+                                .cornerRadius(10)
+                            }
                         }
                         
+                        // Botón Eliminar
                         Button(action: {
-                            // Aquí iría la lógica para eliminar
+                            showDeleteConfirmation = true
                         }) {
                             actionButton(icon: "trash", title: "Eliminar Cuenta", color: Color.red)
                         }
@@ -98,17 +128,34 @@ struct PasswordDetailView: View {
                     .padding(.top, 10)
                     
                     Spacer()
+                        .frame(height: 50)
                 }
             }
         }
         .navigationBarTitle("Detalles", displayMode: .inline)
         .navigationBarItems(
-            trailing: Button("Listo") {
-                presentationMode.wrappedValue.dismiss()
+            trailing: Button("Editar") {
+                showEdit = true
             }
             .foregroundColor(mainBlue)
             .font(.system(size: 16, weight: .medium))
         )
+        .sheet(isPresented: $showEdit) {
+            EditPasswordView(
+                password: password,
+                passwordViewModel: passwordViewModel
+            )
+        }
+        .alert(isPresented: $showDeleteConfirmation) {
+            Alert(
+                title: Text("Eliminar Cuenta"),
+                message: Text("¿Estás seguro de que quieres eliminar esta cuenta? Esta acción no se puede deshacer."),
+                primaryButton: .destructive(Text("Eliminar")) {
+                    deletePassword()
+                },
+                secondaryButton: .cancel(Text("Cancelar"))
+            )
+        }
         .alert(isPresented: $showCopiedAlert) {
             Alert(
                 title: Text("Copiado"),
@@ -280,7 +327,12 @@ struct PasswordDetailView: View {
         showCopiedAlert = true
     }
     
-    // Función para obtener ícono según el servicio (misma que MainListView)
+    private func deletePassword() {
+        passwordViewModel.deletePassword(password)
+        presentationMode.wrappedValue.dismiss()
+    }
+    
+    // Función para obtener ícono según el servicio
     private func getIconForService(_ service: String) -> String {
         let lowercased = service.lowercased()
         
@@ -288,7 +340,7 @@ struct PasswordDetailView: View {
             return "envelope.fill"
         } else if lowercased.contains("facebook") {
             return "f.circle.fill"
-        } else if lowercased.contains("twitter") {
+        } else if lowercased.contains("twitter") || lowercased.contains("x.com") {
             return "bird.fill"
         } else if lowercased.contains("instagram") {
             return "camera.fill"
@@ -324,7 +376,8 @@ struct PasswordDetailView_Previews: PreviewProvider {
                     password: "mi_contraseña_secreta",
                     notes: "Cuenta personal de correo",
                     userEmail: "test@ejemplo.com"
-                )
+                ),
+                passwordViewModel: PasswordViewModel()
             )
         }
     }
