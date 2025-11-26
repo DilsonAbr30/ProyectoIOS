@@ -18,231 +18,179 @@ struct MainListView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Fondo
-                lightBlue.edgesIgnoringSafeArea(.all)
-                
+                // Fondo general con degradado
+                LinearGradient(
+                    gradient: Gradient(colors: [lightBlue, mainBlue.opacity(0.1)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .edgesIgnoringSafeArea(.all)
+
                 // NavigationLinks ocultos
-                NavigationLink(destination: AddPasswordView(passwordViewModel: passwordViewModel), isActive: $showAddPassword) {
-                    EmptyView()
-                }
-                
-                NavigationLink(destination: ProfileView(), isActive: $showProfile) {
-                    EmptyView()
-                }
-                
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Header con título y botones
-                        VStack(spacing: 8) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Mis Contraseñas")
-                                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                                        .foregroundColor(mainBlue)
-                                    
-                                    Text("\(passwordViewModel.passwords.count) contraseñas guardadas")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                Spacer()
-                                
-                                // Botón de Perfil
-                                Button(action: {
-                                    showProfile = true
-                                }) {
-                                    VStack(spacing: 2) {
-                                        Image(systemName: "person.circle.fill")
-                                            .font(.system(size: 20, weight: .medium))
-                                            .foregroundColor(mainBlue)
-                                        Text("Perfil")
-                                            .font(.system(size: 10, weight: .medium))
-                                            .foregroundColor(mainBlue)
-                                    }
-                                }
-                                .padding(.trailing, 10)
-                                
-                                // Botón de Refresh
-                                Button(action: {
-                                    refreshPasswords()
-                                }) {
-                                    VStack(spacing: 2) {
-                                        if isRefreshing {
-                                            Text("⟳")
-                                                .font(.system(size: 18, weight: .medium))
-                                                .foregroundColor(mainBlue)
-                                        } else {
-                                            Image(systemName: "arrow.clockwise.circle")
-                                                .font(.system(size: 20, weight: .medium))
-                                                .foregroundColor(mainBlue)
-                                        }
-                                        Text("Actualizar")
-                                            .font(.system(size: 10, weight: .medium))
-                                            .foregroundColor(mainBlue)
-                                    }
-                                }
-                                .padding(.trailing, 10)
-                                .disabled(isRefreshing)
-                                
-                                // Botón de Cerrar Sesión
-                                Button(action: {
-                                    showLogoutConfirmation = true
-                                }) {
-                                    VStack(spacing: 2) {
-                                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                                            .font(.system(size: 20, weight: .medium))
-                                            .foregroundColor(.red)
-                                        Text("Salir")
-                                            .font(.system(size: 10, weight: .medium))
-                                            .foregroundColor(.red)
-                                    }
-                                }
-                                
-                                // Botón de Agregar - CON NAVIGATIONLINK
-                                Button(action: {
-                                    showAddPassword = true
-                                }) {
-                                    VStack(spacing: 2) {
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.system(size: 22, weight: .medium))
-                                            .foregroundColor(mainBlue)
-                                        Text("Agregar")
-                                            .font(.system(size: 10, weight: .medium))
-                                            .foregroundColor(mainBlue)
-                                    }
-                                }
+                NavigationLink(destination: AddPasswordView(passwordViewModel: passwordViewModel),
+                               isActive: $showAddPassword) { EmptyView() }
+
+                NavigationLink(destination: ProfileView(), isActive: $showProfile) { EmptyView() }
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+
+                        // -------------------------------------------------------
+                        // HEADER MODERNO
+                        // -------------------------------------------------------
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Mis Contraseñas")
+                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .foregroundColor(mainBlue)
+
+                            Text("\(passwordViewModel.passwords.count) guardadas")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.gray)
+
+                            HStack(spacing: 22) {
+                                headerButton(
+                                    icon: "person.crop.circle.fill",
+                                    text: "Perfil",
+                                    color: mainBlue
+                                ) { showProfile = true }
+
+                                headerButton(
+                                    icon: "arrow.clockwise.circle.fill",
+                                    text: isRefreshing ? "Actualizando..." : "Refrescar",
+                                    color: mainBlue
+                                ) { refreshPasswords() }
+                                .opacity(isRefreshing ? 0.6 : 1)
+
+                                headerButton(
+                                    icon: "plus.circle.fill",
+                                    text: "Agregar",
+                                    color: mainBlue
+                                ) { showAddPassword = true }
+
+                                headerButton(
+                                    icon: "rectangle.portrait.and.arrow.right",
+                                    text: "Salir",
+                                    color: .red
+                                ) { showLogoutConfirmation = true }
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.top, 4)
+
                         }
-                        .padding(.top, 20)
-                        .padding(.bottom, 15)
-                        .background(lightBlue)
-                        
-                        // Barra de búsqueda
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.white)
+                        .cornerRadius(25)
+                        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 4)
+                        .padding(.horizontal)
+
+                        // -------------------------------------------------------
+                        // BARRA DE BÚSQUEDA
+                        // -------------------------------------------------------
                         HStack {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(mainBlue)
-                                .font(.system(size: 16, weight: .medium))
-                            
+
                             TextField("Buscar servicios...", text: $searchText)
-                                .font(.system(size: 16, design: .rounded))
-                            
+                                .font(.system(size: 16, weight: .medium))
+
                             if !searchText.isEmpty {
-                                Button(action: {
-                                    searchText = ""
-                                }) {
+                                Button(action: { searchText = "" }) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundColor(.gray)
                                 }
                             }
                         }
-                        .padding(12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .padding(14)
+                        .background(Color.white)
+                        .cornerRadius(14)
+                        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                         .padding(.horizontal)
-                        .padding(.top, 15)
-                        .padding(.bottom, 10)
-                        
-                        // Lista de contraseñas
+
+                        // -------------------------------------------------------
+                        // LISTA VACÍA
+                        // -------------------------------------------------------
                         if passwordViewModel.passwords.isEmpty {
-                            // Vista cuando no hay contraseñas
-                            VStack(spacing: 20) {
+                            VStack(spacing: 18) {
                                 Image(systemName: "lock.shield")
-                                    .font(.system(size: 60))
+                                    .font(.system(size: 70))
                                     .foregroundColor(mainBlue.opacity(0.5))
-                                
-                                VStack(spacing: 8) {
-                                    Text("No hay contraseñas")
-                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                        .foregroundColor(mainBlue)
-                                    
-                                    Text("Toca el botón Agregar para crear tu primera contraseña")
-                                        .font(.system(size: 14, design: .rounded))
-                                        .foregroundColor(.gray)
-                                        .multilineTextAlignment(.center)
-                                }
-                                
-                                // Botón de refresh en estado vacío
-                                Button(action: {
-                                    refreshPasswords()
-                                }) {
-                                    HStack(spacing: 8) {
-                                        if isRefreshing {
-                                            Text("⟳")
-                                                .font(.system(size: 16, weight: .medium))
-                                        } else {
-                                            Image(systemName: "arrow.clockwise")
-                                                .font(.system(size: 16, weight: .medium))
-                                        }
-                                        Text(isRefreshing ? "Actualizando..." : "Actualizar Lista")
-                                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundColor(.white)
+
+                                Text("Aún no tienes contraseñas 🧩")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundColor(mainBlue)
+
+                                Text("Presiona el botón Agregar para crear tu primera contraseña")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
                                     .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .background(mainBlue)
-                                    .cornerRadius(10)
+
+                                Button(action: { refreshPasswords() }) {
+                                    Text(isRefreshing ? "Actualizando..." : "Actualizar Lista")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding()
+                                        .frame(maxWidth: .infinity)
+                                        .background(mainBlue)
+                                        .cornerRadius(12)
+                                        .shadow(color: mainBlue.opacity(0.3), radius: 5, x: 0, y: 3)
                                 }
                                 .disabled(isRefreshing)
                             }
-                            .frame(maxWidth: .infinity, minHeight: 400)
-                            .padding(.horizontal, 40)
-                            .padding(.top, 50)
+                            .padding(.top, 40)
+                            .padding(.horizontal, 32)
+
                         } else {
-                            // Lista de contraseñas con VStack normal para Xcode 12
-                            VStack(spacing: 8) {
+                            // -------------------------------------------------------
+                            // LISTA CON ELEMENTOS
+                            // -------------------------------------------------------
+                            VStack(spacing: 12) {
                                 ForEach(passwordViewModel.passwords) { password in
-                                    NavigationLink(destination: PasswordDetailView(
-                                        password: password,
-                                        passwordViewModel: passwordViewModel
-                                    )) {
-                                        HStack(spacing: 12) {
-                                            // Ícono del servicio
+                                    NavigationLink(
+                                        destination: PasswordDetailView(
+                                            password: password,
+                                            passwordViewModel: passwordViewModel
+                                        )
+                                    ) {
+                                        HStack(spacing: 14) {
+
                                             ZStack {
                                                 Circle()
                                                     .fill(mainBlue.opacity(0.1))
-                                                    .frame(width: 44, height: 44)
-                                                
+                                                    .frame(width: 50, height: 50)
+
                                                 Image(systemName: getIconForService(password.service))
-                                                    .font(.system(size: 18, weight: .medium))
+                                                    .font(.system(size: 20, weight: .medium))
                                                     .foregroundColor(mainBlue)
                                             }
-                                            
-                                            // Información
+
                                             VStack(alignment: .leading, spacing: 4) {
                                                 Text(password.service)
-                                                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                                    .font(.system(size: 18, weight: .semibold))
                                                     .foregroundColor(mainBlue)
-                                                
+
                                                 Text(password.username)
-                                                    .font(.system(size: 14, design: .rounded))
+                                                    .font(.system(size: 14))
                                                     .foregroundColor(.gray)
-                                                    .lineLimit(1)
                                             }
-                                            
+
                                             Spacer()
-                                            
-                                            // Indicador de seguridad
+
                                             Image(systemName: "checkmark.shield.fill")
-                                                .font(.system(size: 14))
                                                 .foregroundColor(.green)
                                         }
-                                        .padding(.vertical, 12)
-                                        .padding(.horizontal, 16)
+                                        .padding()
                                         .background(Color.white)
-                                        .cornerRadius(12)
-                                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                        .cornerRadius(16)
+                                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 3)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                 }
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal)
                         }
-                        
-                        // Espacio adicional al final para mejor scroll
-                        Spacer()
-                            .frame(height: 50)
+
+                        Spacer().frame(height: 50)
                     }
                 }
             }
@@ -250,28 +198,32 @@ struct MainListView: View {
             .alert(isPresented: $showLogoutConfirmation) {
                 Alert(
                     title: Text("Cerrar Sesión"),
-                    message: Text("¿Estás seguro de que quieres cerrar sesión?"),
+                    message: Text("¿Deseas salir de tu cuenta?"),
                     primaryButton: .destructive(Text("Cerrar Sesión")) {
                         authViewModel.signOut()
                     },
                     secondaryButton: .cancel(Text("Cancelar"))
                 )
             }
-            .onAppear {
-                // ✅ DEBUG PARA VERIFICAR EL CAMBIO
-                if let user = Auth.auth().currentUser {
-                    print("🔍 DEBUG - UID ACTUAL: \(user.uid)")
-                    print("🔍 DEBUG - EMAIL ACTUAL: \(user.email ?? "no email")")
-                } else {
-                    print("❌ DEBUG - No hay usuario autenticado")
-                }
-                
-                passwordViewModel.fetchPasswords()
-            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
-    
+
+    private func headerButton(icon: String, text: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(color)
+
+                Text(text)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(color)
+            }
+            .padding(8)
+        }
+    }
+
     private func refreshPasswords() {
         isRefreshing = true
         passwordViewModel.refreshPasswords()
@@ -373,3 +325,4 @@ struct MainListView: View {
         }
     }
 }
+

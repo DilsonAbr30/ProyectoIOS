@@ -11,13 +11,15 @@ struct LoginView: View {
     @State private var showAlert = false
     @State private var isLoading = false
     
-    // Colores azules
-    let mainBlue = Color(red: 0.1, green: 0.3, blue: 0.7)
-    let lightBlue = Color(red: 0.9, green: 0.95, blue: 1.0)
+    // Animación de entrada
+    @State private var appear = false
+    
+    // Colores personalizados (Gradientes)
+    let gradientStart = Color(red: 0.1, green: 0.3, blue: 0.8) // Azul intenso
+    let gradientEnd = Color(red: 0.4, green: 0.1, blue: 0.6)   // Toque morado moderno
     
     // Función de login
     func login() {
-        // Validaciones básicas
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Por favor completa todos los campos"
             showAlert = true
@@ -40,186 +42,237 @@ struct LoginView: View {
                 self.showAlert = true
             } else {
                 print("✅ Inicio de sesión exitoso: \(email)")
-                // Aquí puedes navegar a la siguiente vista
             }
         }
     }
     
-    // Validación de email
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
         return emailPred.evaluate(with: email)
     }
     
-    // Manejo de errores específicos
     private func getLoginErrorMessage(_ error: Error) -> String {
         let nsError = error as NSError
-        
         switch nsError.code {
-        case AuthErrorCode.wrongPassword.rawValue:
-            return "Contraseña incorrecta"
-        case AuthErrorCode.userNotFound.rawValue:
-            return "No existe una cuenta con este email"
-        case AuthErrorCode.invalidEmail.rawValue:
-            return "El formato del email no es válido"
-        case AuthErrorCode.networkError.rawValue:
-            return "Error de conexión. Verifica tu internet"
-        case AuthErrorCode.tooManyRequests.rawValue:
-            return "Demasiados intentos. Intenta más tarde"
-        default:
-            return "Error al iniciar sesión: \(error.localizedDescription)"
+        case AuthErrorCode.wrongPassword.rawValue: return "Contraseña incorrecta"
+        case AuthErrorCode.userNotFound.rawValue: return "No existe una cuenta con este email"
+        case AuthErrorCode.invalidEmail.rawValue: return "El formato del email no es válido"
+        case AuthErrorCode.networkError.rawValue: return "Error de conexión. Verifica tu internet"
+        default: return "Error: \(error.localizedDescription)"
         }
     }
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Fondo azul claro
-                lightBlue.edgesIgnoringSafeArea(.all)
+                // 1. FONDO CREATIVO CON GRADIENTE ANIMADO
+                LinearGradient(gradient: Gradient(colors: [gradientStart, gradientEnd]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .edgesIgnoringSafeArea(.all)
+                
+                // Círculos decorativos de fondo (Efecto bokeh sutil)
+                Circle()
+                    .fill(Color.white.opacity(0.1)) // CORREGIDO: Color.white
+                    .frame(width: 300, height: 300)
+                    .offset(x: -100, y: -300)
+                    .blur(radius: 20)
+                
+                Circle()
+                    .fill(Color.white.opacity(0.1)) // CORREGIDO: Color.white
+                    .frame(width: 250, height: 250)
+                    .offset(x: 150, y: 350)
+                    .blur(radius: 20)
                 
                 ScrollView {
-                    VStack(spacing: 30) {
-                        // Header
-                        VStack(spacing: 15) {
-                            Image(systemName: "lock.shield.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(mainBlue)
+                    VStack(spacing: 35) {
+                        
+                        // 2. LOGO Y TÍTULO ANIMADOS
+                        VStack(spacing: 10) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white.opacity(0.2)) // CORREGIDO: Color.white
+                                    .frame(width: 110, height: 110)
+                                
+                                Image(systemName: "lock.shield.fill")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(Color.white) // CORREGIDO: Color.white
+                                    .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5) // CORREGIDO: Color.black
+                            }
+                            .scaleEffect(appear ? 1 : 0.5)
+                            .opacity(appear ? 1 : 0)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0))
                             
                             Text("Password Manager")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
-                                .foregroundColor(mainBlue)
+                                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                                .foregroundColor(Color.white) // CORREGIDO: Color.white
+                                .shadow(radius: 5)
+                                .opacity(appear ? 1 : 0)
+                                .animation(Animation.easeOut(duration: 0.8).delay(0.2))
                             
-                            Text("Gestiona tus contraseñas de forma segura")
-                                .font(.system(size: 14, design: .rounded))
-                                .foregroundColor(.gray)
+                            Text("Tu seguridad en un solo lugar")
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(Color.white.opacity(0.8)) // CORREGIDO: Color.white
+                                .opacity(appear ? 1 : 0)
+                                .animation(Animation.easeOut(duration: 0.8).delay(0.4))
                         }
-                        .padding(.top, 50)
+                        .padding(.top, 60)
                         
-                        // Campos de formulario
-                        VStack(spacing: 20) {
+                        // 3. FORMULARIO CON ESTILO "CRISTAL" (Glassmorphism)
+                        VStack(spacing: 25) {
+                            
                             // Campo Email
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Correo electrónico")
-                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                    .foregroundColor(mainBlue)
+                                Text("CORREO ELECTRÓNICO")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color.white.opacity(0.8)) // CORREGIDO: Color.white
                                 
-                                TextField("tu@email.com", text: $email)
-                                    .keyboardType(.emailAddress)
-                                    .autocapitalization(.none)
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(email.isEmpty ? Color.gray.opacity(0.3) : mainBlue, lineWidth: 1)
-                                    )
+                                HStack {
+                                    Image(systemName: "envelope.fill")
+                                        .foregroundColor(Color.white.opacity(0.7)) // CORREGIDO: Color.white
+                                    TextField("", text: $email)
+                                        // Placeholder personalizado blanco
+                                        .placeholder(when: email.isEmpty) {
+                                            Text("ejemplo@correo.com").foregroundColor(Color.white.opacity(0.5)) // CORREGIDO: Color.white
+                                        }
+                                        .foregroundColor(Color.white) // CORREGIDO: Color.white
+                                        .keyboardType(.emailAddress)
+                                        .autocapitalization(.none)
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.2)) // CORREGIDO: Color.white
+                                .cornerRadius(15)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1) // CORREGIDO: Color.white
+                                )
                             }
                             
                             // Campo Contraseña
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Contraseña")
-                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                    .foregroundColor(mainBlue)
+                                Text("CONTRASEÑA")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color.white.opacity(0.8)) // CORREGIDO: Color.white
                                 
-                                SecureField("Ingresa tu contraseña", text: $password)
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(password.isEmpty ? Color.gray.opacity(0.3) : mainBlue, lineWidth: 1)
-                                    )
-                            }
-                        }
-                        
-                        // Botón de Iniciar Sesión
-                        Button(action: login) {
-                            HStack {
-                                if isLoading {
-                                    Text("⏳")
-                                        .font(.system(size: 18))
-                                } else {
-                                    Image(systemName: "arrow.right.circle.fill")
-                                        .font(.system(size: 18, weight: .medium))
+                                HStack {
+                                    Image(systemName: "lock.fill")
+                                        .foregroundColor(Color.white.opacity(0.7)) // CORREGIDO: Color.white
+                                    SecureField("", text: $password)
+                                        .placeholder(when: password.isEmpty) {
+                                            Text("••••••••").foregroundColor(Color.white.opacity(0.5)) // CORREGIDO: Color.white
+                                        }
+                                        .foregroundColor(Color.white) // CORREGIDO: Color.white
                                 }
-                                
-                                Text(isLoading ? "Iniciando sesión..." : "Iniciar Sesión")
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.white)
-                                
+                                .padding()
+                                .background(Color.white.opacity(0.2)) // CORREGIDO: Color.white
+                                .cornerRadius(15)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1) // CORREGIDO: Color.white
+                                )
+                            }
+                            
+                            // Botón Olvidaste Contraseña
+                            HStack {
                                 Spacer()
-                            }
-                            .padding(16)
-                            .background(!email.isEmpty && !password.isEmpty && !isLoading ? mainBlue : Color.gray)
-                            .cornerRadius(12)
-                            .shadow(color: !email.isEmpty && !password.isEmpty && !isLoading ? mainBlue.opacity(0.3) : Color.clear, radius: 5, x: 0, y: 3)
-                        }
-                        .disabled(email.isEmpty || password.isEmpty || isLoading)
-                        
-                        // BOTONES JUNTOS - Olvidaste contraseña y Crear Cuenta
-                        VStack(spacing: 15) {
-                            // Botón de recuperación de contraseña
-                            Button("¿Olvidaste tu contraseña?") {
-                                showingForgotPassword = true
-                            }
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(mainBlue)
-                            
-                            // Separador
-                            HStack {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(height: 1)
-                                Text("o")
-                                    .font(.system(size: 12, design: .rounded))
-                                    .foregroundColor(.gray)
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(height: 1)
-                            }
-                            .padding(.horizontal, 20)
-                            
-                            // NavigationLink para Crear Cuenta
-                            NavigationLink(destination: RegisterView(isShowingRegisterView: $showingRegister), isActive: $showingRegister) {
-                                Button(action: {
-                                    showingRegister = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "person.badge.plus")
-                                            .font(.system(size: 16, weight: .medium))
-                                        Text("Crear Cuenta Nueva")
-                                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 25)
-                                    .padding(.vertical, 12)
-                                    .background(mainBlue)
-                                    .cornerRadius(10)
+                                Button(action: { showingForgotPassword = true }) {
+                                    Text("¿Olvidaste tu contraseña?")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(Color.white) // CORREGIDO: Color.white
+                                        .underline(true, color: Color.white.opacity(0.5)) // CORREGIDO: Color.white
                                 }
                             }
                         }
-                        .padding(.top, 10)
+                        .padding(.horizontal, 30)
+                        .opacity(appear ? 1 : 0)
+                        .offset(y: appear ? 0 : 20)
+                        .animation(Animation.easeOut(duration: 0.8).delay(0.6))
                         
-                        Spacer()
-                            .frame(height: 50)
+                        Spacer().frame(height: 10)
+                        
+                        // 4. BOTONES DE ACCIÓN
+                        VStack(spacing: 20) {
+                            // Botón Login Grande
+                            Button(action: login) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .fill(Color.white) // CORREGIDO: Color.white
+                                        .frame(height: 55)
+                                        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5) // CORREGIDO: Color.black
+                                    
+                                    HStack {
+                                        if isLoading {
+                                            // Usamos el ActivityIndicator compatible si lo tienes,
+                                            // sino un texto simple para evitar errores.
+                                            // Si tienes ActivityIndicator.swift, usa:
+                                            // ActivityIndicator(isAnimating: .constant(true), style: .medium)
+                                            Text("Cargando...")
+                                                .foregroundColor(gradientStart)
+                                        } else {
+                                            Text("Iniciar Sesión")
+                                                .font(.headline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(gradientStart)
+                                            Image(systemName: "arrow.right")
+                                                .font(.headline)
+                                                .foregroundColor(gradientStart)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 30)
+                            .disabled(email.isEmpty || password.isEmpty || isLoading)
+                            .opacity(email.isEmpty || password.isEmpty ? 0.7 : 1)
+                            
+                            // Botón Crear Cuenta (Secundario)
+                            NavigationLink(destination: RegisterView(isShowingRegisterView: $showingRegister), isActive: $showingRegister) {
+                                Button(action: { showingRegister = true }) {
+                                    Text("¿No tienes cuenta? **Regístrate**")
+                                        .foregroundColor(Color.white) // CORREGIDO: Color.white
+                                        .font(.system(size: 16))
+                                }
+                            }
+                        }
+                        .padding(.bottom, 40)
+                        .opacity(appear ? 1 : 0)
+                        .animation(Animation.easeOut(duration: 0.8).delay(0.8))
                     }
-                    .padding(30)
                 }
             }
             .navigationBarHidden(true)
+            .onAppear {
+                self.appear = true
+            }
             .sheet(isPresented: $showingForgotPassword) {
                 ForgotPasswordView()
             }
             .alert(isPresented: $showAlert) {
                 Alert(
-                    title: Text("Error de Inicio de Sesión"),
-                    message: Text(errorMessage ?? "Credenciales inválidas."),
-                    dismissButton: .default(Text("OK"))
+                    title: Text("Atención"),
+                    message: Text(errorMessage ?? "Error desconocido"),
+                    dismissButton: .default(Text("Entendido"))
                 )
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
+// Extensión para placeholder personalizado
+// Si ya la tienes en RegisterView y te da error de "redeclaration", BORRA ESTAS LÍNEAS.
+// Solo necesitas tenerla una vez en todo el proyecto.
+extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content) -> some View {
+
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
+        }
     }
 }
 
@@ -228,3 +281,5 @@ struct LoginView_Previews: PreviewProvider {
         LoginView()
     }
 }
+
+
